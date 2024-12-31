@@ -1,9 +1,15 @@
 # Kafka
+
+
 This GitHub repository will include all Leverate DevOps-Team Kafka configurations.
+
 
 # SECTION 1 - docker-composeSWARM.yaml 
 
+
+
 # Prerequisites
+
 
 In order to deploy this docker-compose file  we need to make sure of few things :
 
@@ -13,7 +19,11 @@ In order to deploy this docker-compose file  we need to make sure of few things 
   
 * The Kafka-Controller will act as the Docker-Swarm manager
 
+  
+
 # 1. We will run the following command on the Kafka-Controller:
+
+
   
  docker swarm init --advertise-addr <MANAGER_IP>
   
@@ -26,6 +36,8 @@ In order to deploy this docker-compose file  we need to make sure of few things 
 
 # 2. Deploy the stack 
 
+
+
 docker stack deploy -c <docker compose file name> <stack name>
 
 For example : 
@@ -33,6 +45,7 @@ For example :
 docker stack deploy -c docker-composeSwarm.yaml kafka-cluster
 
 # 3. Check the stack
+
 
 docker stack ps <stack name>
 
@@ -50,9 +63,13 @@ docker stack ps kafka-cluster
 
 # SECTION 2  - docker-composeSINGLE.yaml
 
+
+
 Since this configuration does not involve Docker-Swarm, and all Brokers and Controller are deploying on same machine -  we can easily deploy it with docker-compose.
 
 # Deploy the docker-compose.yaml file 
+
+
 
 * If no other docker-compose yaml file on your path we will run  -
 
@@ -64,6 +81,7 @@ Since this configuration does not involve Docker-Swarm, and all Brokers and Cont
 
 
 # Check the cluster status 
+
 
 docker ps 
 
