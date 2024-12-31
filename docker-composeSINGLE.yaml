@@ -1,3 +1,5 @@
+# Please make sure you are checking the README.md file before moving forward with your setup.
+
 version: '3.7'
 
 services:
