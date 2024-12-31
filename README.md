@@ -1,7 +1,7 @@
 # Kafka
 This GitHub repository will include all Leverate DevOps-Team Kafka configurations.
 
-# SECTION 1 - docker-composeSWARM.yml 
+# SECTION 1 - docker-composeSWARM.yaml 
 
 # Prerequisites
 
@@ -30,7 +30,7 @@ docker stack deploy -c <docker compose file name> <stack name>
 
 For example : 
 
-docker stack deploy -c docker-composeSwarm.yml kafka-cluster
+docker stack deploy -c docker-composeSwarm.yaml kafka-cluster
 
 # 3. Check the stack
 
@@ -41,12 +41,30 @@ For example  :
 docker stack ps kafka-cluster
 
 
-# Healthy state : 
 
-ID             NAME                               IMAGE                              NODE            DESIRED STATE   CURRENT STATE               ERROR     PORTS
-1hnyfwg5hp7t   kafka-cluster_kafdrop.1            obsidiandynamics/kafdrop:3.27.0    KafkaDocker-1   Running         Running about an hour ago
-tqstpii8ipe0   kafka-cluster_kafka-broker-2.1     bitnami/kafka:latest               KafkaDocker-2   Running         Running about an hour ago
-k4yhgw49xs2h   kafka-cluster_kafka-broker-3.1     bitnami/kafka:latest               KafkaDocker-3   Running         Running about an hour ago
-ioq822kz4nay   kafka-cluster_kafka-controller.1   bitnami/kafka:latest               KafkaDocker-1   Running         Running about an hour ago
-qyxpk4iaelnl   kafka-cluster_zookeeper.1          confluentinc/cp-zookeeper:latest   KafkaDocker-2   Running         Running about an hour ago
 
+
+
+
+
+
+# SECTION 2  - docker-composeSINGLE.yaml
+
+Since this configuration does not involve Docker-Swarm, and all Brokers and Controller are deploying on same machine -  we can easily deploy it with docker-compose.
+
+# Deploy the docker-compose.yaml file 
+
+* If no other docker-compose yaml file on your path we will run  -
+
+  docker-compose up -d 
+
+* If we want to specify the file -
+
+  docker-compose -f docker-composeSINGLE.yaml up -d
+
+
+# Check the cluster status 
+
+docker ps 
+
+docker ps -a # For all containers
