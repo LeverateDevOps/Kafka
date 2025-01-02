@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  # Zookeeper Instance 1
+  zookeeper-1:
+    image: zookeeper:3.8
+    restart: always
+    hostname: zookeeper-1
+    ports:
+      - 2181:2181    # Client Port
+      - 2888:2888    # Quorum Port
+      - 3888:3888    # Leader Election Port
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper-1:2888:3888;2181 server.2=zookeeper-2:2888:3888;2181 server.3=zookeeper-3:2888:3888;2181
+    networks:
+      - kafka-network
+    volumes:
+      - zookeeper-1-data:/data
+      - zookeeper-1-datalog:/datalog
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == KafkaDocker-1  # Ensure this matches your actual node hostname
+      restart_policy:
+        condition: on-failure
+
+  # Zookeeper Instance 2
+  zookeeper-2:
+    image: zookeeper:3.8
+    restart: always
+    hostname: zookeeper-2
+    ports:
+      - 2182:2181    # Client Port
+      - 2889:2888    # Quorum Port
+      - 3889:3888    # Leader Election Port
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper-1:2888:3888;2181 server.2=zookeeper-2:2888:3888;2181 server.3=zookeeper-3:2888:3888;2181
+    networks:
+      - kafka-network
+    volumes:
+      - zookeeper-2-data:/data
+      - zookeeper-2-datalog:/datalog
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == KafkaDocker-2  # Ensure this matches your actual node hostname
+      restart_policy:
+        condition: on-failure
+
+  # Zookeeper Instance 3
+  zookeeper-3:
+    image: zookeeper:3.8
+    restart: always
+    hostname: zookeeper-3
+    ports:
+      - 2183:2181    # Client Port
+      - 2890:2888    # Quorum Port
+      - 3890:3888    # Leader Election Port
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper-1:2888:3888;2181 server.2=zookeeper-2:2888:3888;2181 server.3=zookeeper-3:2888:3888;2181
+    networks:
+      - kafka-network
+    volumes:
+      - zookeeper-3-data:/data
+      - zookeeper-3-datalog:/datalog
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == KafkaDocker-3  # Ensure this matches your actual node hostname
+      restart_policy:
+        condition: on-failure
+
+  # Kafka Broker 1
+  kafka-broker-1:
+    image: bitnami/kafka:latest
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_LISTENER_PORT: 9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker-1:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_NAME: PLAINTEXT
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    networks:
+      - kafka-network
+    volumes:
+      - kafka-broker-1-data:/bitnami
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == KafkaDocker-1  # Ensure this matches your actual node hostname
+      restart_policy:
+        condition: on-failure
+
+  # Kafka Broker 2
+  kafka-broker-2:
+    image: bitnami/kafka:latest
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_LISTENER_PORT: 9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker-2:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+      KAFKA_BROKER_ID: 2
+      KAFKA_LISTENER_NAME: PLAINTEXT
+    ports:
+      - "9093:9092"
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    networks:
+      - kafka-network
+    volumes:
+      - kafka-broker-2-data:/bitnami
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == KafkaDocker-2  # Ensure this matches your actual node hostname
+      restart_policy:
+        condition: on-failure
+
+  # Kafka Broker 3
+  kafka-broker-3:
+    image: bitnami/kafka:latest
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_LISTENER_PORT: 9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker-3:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+      KAFKA_BROKER_ID: 3
+      KAFKA_LISTENER_NAME: PLAINTEXT
+    ports:
+      - "9094:9092"
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    networks:
+      - kafka-network
+    volumes:
+      - kafka-broker-3-data:/bitnami
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == KafkaDocker-3  # Ensure this matches your actual node hostname
+      restart_policy:
+        condition: on-failure
+
+  # Kafdrop UI (Running on KafkaDocker-1)
+  kafdrop:
+    image: obsidiandynamics/kafdrop:3.27.0
+    environment:
+      KAFKA_BROKERCONNECT: kafka-broker-1:9092,kafka-broker-2:9093,kafka-broker-3:9094
+      LOGGING_LEVEL_ROOT: DEBUG
+      JVM_OPTS: -Xms128m -Xmx256m
+    ports:
+      - "9000:9000"
+    depends_on:
+      - kafka-broker-1
+      - kafka-broker-2
+      - kafka-broker-3
+    networks:
+      - kafka-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == KafkaDocker-1  # Ensure this matches your actual node hostname
+      restart_policy:
+        condition: on-failure
+
+networks:
+  kafka-network:
+    external: true  # Ensure this network is created as an overlay network in Swarm
+
+volumes:
+  zookeeper-1-data:
+    driver: local
+  zookeeper-1-datalog:
+    driver: local
+  zookeeper-2-data:
+    driver: local
+  zookeeper-2-datalog:
+    driver: local
+  zookeeper-3-data:
+    driver: local
+  zookeeper-3-datalog:
+    driver: local
+  kafka-broker-1-data:
+    driver: local
+  kafka-broker-2-data:
+    driver: local
+  kafka-broker-3-data:
+    driver: local
