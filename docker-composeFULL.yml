@@ -1,11 +1,13 @@
 version: '3.8'
 
 services:
-  # Zookeeper Instance 1
+  # ------------------------------------------------------------------------------------
+  # Zookeeper Instances
+  # ------------------------------------------------------------------------------------
   zookeeper-1:
     image: zookeeper:3.8
-    restart: always
     hostname: zookeeper-1
+    restart: always
     ports:
       - 2181:2181    # Client Port
       - 2888:2888    # Quorum Port
@@ -26,11 +28,10 @@ services:
       restart_policy:
         condition: on-failure
 
-  # Zookeeper Instance 2
   zookeeper-2:
     image: zookeeper:3.8
-    restart: always
     hostname: zookeeper-2
+    restart: always
     ports:
       - 2182:2181
       - 2889:2888
@@ -51,11 +52,10 @@ services:
       restart_policy:
         condition: on-failure
 
-  # Zookeeper Instance 3
   zookeeper-3:
     image: zookeeper:3.8
-    restart: always
     hostname: zookeeper-3
+    restart: always
     ports:
       - 2183:2181
       - 2890:2888
@@ -76,16 +76,32 @@ services:
       restart_policy:
         condition: on-failure
 
+  # ------------------------------------------------------------------------------------
   # Kafka Broker 1
+  # ------------------------------------------------------------------------------------
   kafka-broker-1:
     image: bitnami/kafka:latest
+    hostname: kafka-broker-1
     environment:
-      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
-      KAFKA_LISTENER_PORT: 9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker-1:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
-      KAFKA_BROKER_ID: 1
-      KAFKA_LISTENER_NAME: PLAINTEXT
+      # Allow plaintext listeners in Bitnami's Kafka image
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+
+      # Unique broker ID
+      KAFKA_BROKER_ID: "1"
+
+      # We define the internal + external port the broker listens on
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092"
+      # Advertise the internal overlay hostname + port
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-broker-1:9092"
+
+      # Points to all Zookeepers
+      KAFKA_CFG_ZOOKEEPER_CONNECT: "zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181"
+
+      # Inter-broker comm uses PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+
+      # This can be useful to auto-create topics for quick testing
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports:
       - "9092:9092"
     depends_on:
@@ -104,18 +120,25 @@ services:
       restart_policy:
         condition: on-failure
 
+  # ------------------------------------------------------------------------------------
   # Kafka Broker 2
+  # ------------------------------------------------------------------------------------
   kafka-broker-2:
     image: bitnami/kafka:latest
+    hostname: kafka-broker-2
     environment:
-      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
-      KAFKA_LISTENER_PORT: 9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker-2:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
-      KAFKA_BROKER_ID: 2
-      KAFKA_LISTENER_NAME: PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_BROKER_ID: "2"
+      # Listen internally on 9093
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9093"
+      # Advertise broker-2 + 9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-broker-2:9093"
+      KAFKA_CFG_ZOOKEEPER_CONNECT: "zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181"
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    # Make sure container port 9093 maps to host port 9093
     ports:
-      - "9093:9092"
+      - "9093:9093"
     depends_on:
       - zookeeper-1
       - zookeeper-2
@@ -132,18 +155,24 @@ services:
       restart_policy:
         condition: on-failure
 
+  # ------------------------------------------------------------------------------------
   # Kafka Broker 3
+  # ------------------------------------------------------------------------------------
   kafka-broker-3:
     image: bitnami/kafka:latest
+    hostname: kafka-broker-3
     environment:
-      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
-      KAFKA_LISTENER_PORT: 9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker-3:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
-      KAFKA_BROKER_ID: 3
-      KAFKA_LISTENER_NAME: PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_BROKER_ID: "3"
+      # Listen internally on 9094
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9094"
+      # Advertise broker-3 + 9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-broker-3:9094"
+      KAFKA_CFG_ZOOKEEPER_CONNECT: "zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181"
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports:
-      - "9094:9092"
+      - "9094:9094"
     depends_on:
       - zookeeper-1
       - zookeeper-2
@@ -160,11 +189,14 @@ services:
       restart_policy:
         condition: on-failure
 
-  # Kafdrop UI
+  # ------------------------------------------------------------------------------------
+  # Kafdrop
+  # ------------------------------------------------------------------------------------
   kafdrop:
     image: obsidiandynamics/kafdrop:3.27.0
     environment:
-      KAFKA_BROKERCONNECT: kafka-broker-1:9092,kafka-broker-2:9093,kafka-broker-3:9094
+      # Must match the internal overlay addresses & ports for each broker
+      KAFKA_BROKERCONNECT: "kafka-broker-1:9092,kafka-broker-2:9093,kafka-broker-3:9094"
       LOGGING_LEVEL_ROOT: DEBUG
       JVM_OPTS: -Xms128m -Xmx256m
     ports:
@@ -183,34 +215,37 @@ services:
       restart_policy:
         condition: on-failure
 
-  # Portainer Service
+  # ------------------------------------------------------------------------------------
+  # Portainer
+  # ------------------------------------------------------------------------------------
   portainer:
     image: portainer/portainer-ce:latest
     ports:
-      - "9001:9000"  # Expose Portainer UI on port 9001 (host) -> 9000 (container)
+      - "9001:9000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock   # Required for managing Docker
-      - portainer_data:/data                        # Data volume for Portainer
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
     networks:
       - kafka-network
     deploy:
       replicas: 1
       placement:
-        # Option A: Ensure it runs on a manager node
         constraints:
           - node.hostname == KafkaDocker-1
-        # Option B (alternative): If you specifically want it on KafkaDocker-1
-        # constraints:
-        #   - node.hostname == KafkaDocker-1
       restart_policy:
         condition: on-failure
 
+# --------------------------------------------------------------------------------------
+# Networks
+# --------------------------------------------------------------------------------------
 networks:
   kafka-network:
-    external: true  # Ensure this overlay network is created in Swarm
+    external: true
 
+# --------------------------------------------------------------------------------------
+# Volumes
+# --------------------------------------------------------------------------------------
 volumes:
-  # Existing volumes
   zookeeper-1-data:
     driver: local
   zookeeper-1-datalog:
@@ -229,7 +264,5 @@ volumes:
     driver: local
   kafka-broker-3-data:
     driver: local
-
-  # New volume for Portainer data
   portainer_data:
     driver: local
