@@ -38,6 +38,8 @@ In order to deploy this docker-compose file  we need to make sure of few things 
   
 * The Kafka-Controller will act as the Docker-Swarm manager
 
+* Make sure firewall is DISABLED for all machines !
+
   
 
 # 1. We will run the following command on the Kafka-Controller:
