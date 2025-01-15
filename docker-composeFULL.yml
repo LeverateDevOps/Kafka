@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 
 services:
   # ------------------------------------------------------------------------------------
@@ -193,7 +193,7 @@ services:
   # Kafdrop
   # ------------------------------------------------------------------------------------
   kafdrop:
-    image: obsidiandynamics/kafdrop:3.27.0
+    image: obsidiandynamics/kafdrop:latest
     environment:
       # Must match the internal overlay addresses & ports for each broker
       KAFKA_BROKERCONNECT: "kafka-broker-1:9092,kafka-broker-2:9093,kafka-broker-3:9094"
