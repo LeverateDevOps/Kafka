@@ -1,0 +1,68 @@
+# Copyright Broadcom, Inc. All Rights Reserved.
+# SPDX-License-Identifier: APACHE-2.0
+
+services:
+  kafka-1:
+    image: docker.io/bitnami/kafka:3.9
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      # KRaft settings
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@192.168.3.153:9093,2@192.168.3.157:9093,3@192.168.3.50:9093,4@192.168.3.102:9093,5@192.168.3.101:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.3.153:9092,CONTROLLER://192.168.3.153:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_ELECTION_TIMEOUT_MS=30000
+      # Clustering
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=2
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=2
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    volumes:
+      - kafka-broker-1-data:/bitnami/kafka
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - KAFKA_BROKERCONNECT=192.168.3.153:9092
+    depends_on:
+      - kafka-1
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8080:8080
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    volumes:
+      - kafkaui_data:/data
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: always
+    ports:
+      - "9443:9443"
+      - "9001:9000"
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  kafka-broker-1-data:
+    driver: local
+  portainer_data:
+    driver: local
+  kafkaui_data:
+    driver: local
